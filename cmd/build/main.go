@@ -10,18 +10,27 @@ import (
 )
 
 var config struct {
-	url string
+	urls []string
 }
 
 func runBuild() error {
-	flag.StringVar(&config.url, "url", "", "")
+	flag.Func("url", "", func(s string) error {
+		config.urls = append(config.urls, s)
+		return nil
+	})
 	flag.Parse()
 
-	player, err := site.ExtractPlayer(config.url)
-	if err != nil {
-		return err
+	var players []*site.Player
+	for _, url := range config.urls {
+		slog.Info("extracting", slog.String("url", url))
+		player, err := site.ExtractPlayer(url)
+		if err != nil {
+			return err
+		}
+		slog.Info("extracted", slog.Any("player", player))
+		players = append(players, player)
 	}
-	slog.Info("extract", slog.Any("player", player))
+
 	return nil
 }
 
