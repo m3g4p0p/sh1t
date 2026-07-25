@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"m3g4p0p/sh1t/internal/urlpath"
 
@@ -23,12 +24,12 @@ func ExtractPlayer(url string) (*Player, error) {
 		return nil, err
 	}
 
-	title := findMetaProperty(doc, "og:title")
+	title := findTitle(doc)
 	if title == "" {
 		return nil, fmt.Errorf("no title found parsing %s", url)
 	}
 
-	embedURL := findMetaProperty(doc, "og:video")
+	embedURL := findEmbedURL(doc)
 	if embedURL == "" {
 		return nil, fmt.Errorf("no player found parsing %s", url)
 	}
@@ -63,14 +64,32 @@ func attrMap(n *html.Node) map[string]string {
 	return m
 }
 
-func findMetaProperty(doc *html.Node, name string) string {
+func findTitle(doc *html.Node) string {
+	for node := range doc.Descendants() {
+		if node.DataAtom != atom.Title {
+			continue
+		}
+
+		var b strings.Builder
+		for child := range node.ChildNodes() {
+			if child.Type == html.TextNode {
+				b.WriteString(child.Data)
+			}
+		}
+		return b.String()
+	}
+
+	return ""
+}
+
+func findEmbedURL(doc *html.Node) string {
 	for node := range doc.Descendants() {
 		if node.DataAtom != atom.Meta {
 			continue
 		}
 
 		attrs := attrMap(node)
-		if attrs["property"] == name {
+		if attrs["property"] == "og:video" {
 			return attrs["content"]
 		}
 	}
