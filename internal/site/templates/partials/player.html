@@ -1,0 +1,12 @@
+{{define "player"}}
+<figure>
+  <figcaption>{{.Title}}</figcaption>
+  <iframe
+    style="border: 0; width: 100%; height: 120px"
+    src="{{.EmbedURL}}"
+    seamless
+  >
+    <a href="{{.AlbumURL}}">{{.Title}}</a>
+  </iframe>
+</figure>
+{{end}}

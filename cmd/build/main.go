@@ -31,7 +31,7 @@ func runBuild() error {
 		players = append(players, player)
 	}
 
-	return nil
+	return site.Generate(players)
 }
 
 func init() {

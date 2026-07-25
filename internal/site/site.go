@@ -10,12 +10,25 @@ import (
 //go:embed templates/*
 var fs embed.FS
 
-var indexTpl = template.Must(template.ParseFS(fs, "templates/index.html"))
+var baseTpl = template.Must(template.ParseFS(
+	fs,
+	"templates/base.html",
+	"templates/partials/*.html",
+))
 
-func Generate() error {
+var indexTpl = template.Must(
+	template.Must(baseTpl.Clone()).
+		ParseFS(fs, "templates/pages/index.html"),
+)
+
+type tplData struct {
+	Players []*Player
+}
+
+func Generate(players []*Player) error {
 	f, err := os.Create(filepath.Join("docs", "index.html"))
 	if err != nil {
 		return err
 	}
-	return indexTpl.Execute(f, nil)
+	return indexTpl.Execute(f, tplData{players})
 }
