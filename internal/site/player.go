@@ -23,7 +23,12 @@ func ExtractPlayer(url string) (*Player, error) {
 		return nil, err
 	}
 
-	embedURL := findEmbedURL(doc)
+	title := findMetaProperty(doc, "og:title")
+	if title == "" {
+		return nil, fmt.Errorf("no title found parsing %s", url)
+	}
+
+	embedURL := findMetaProperty(doc, "og:video")
 	if embedURL == "" {
 		return nil, fmt.Errorf("no player found parsing %s", url)
 	}
@@ -33,7 +38,11 @@ func ExtractPlayer(url string) (*Player, error) {
 		return nil, err
 	}
 
-	return &Player{AlbumURL: url, EmbedURL: processed}, nil
+	return &Player{
+		Title:    title,
+		AlbumURL: url,
+		EmbedURL: processed,
+	}, nil
 }
 
 func parsePage(url string) (*html.Node, error) {
@@ -54,17 +63,18 @@ func attrMap(n *html.Node) map[string]string {
 	return m
 }
 
-func findEmbedURL(doc *html.Node) string {
+func findMetaProperty(doc *html.Node, name string) string {
 	for node := range doc.Descendants() {
 		if node.DataAtom != atom.Meta {
 			continue
 		}
 
 		attrs := attrMap(node)
-		if attrs["property"] == "og:video" {
+		if attrs["property"] == name {
 			return attrs["content"]
 		}
 	}
+
 	return ""
 }
 
