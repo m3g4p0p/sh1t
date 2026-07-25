@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"m3g4p0p/sh1t/internal/site"
+	"m3g4p0p/sh1t/internal/writer"
 )
 
 var config struct {
@@ -16,7 +17,17 @@ func runBuild() error {
 	flag.StringVar(&config.url, "url", "", "")
 	flag.Parse()
 
-	return site.ExtractPlayer(config.url)
+	player, err := site.ExtractPlayer(config.url)
+	if err != nil {
+		return err
+	}
+	slog.Info("extract", slog.Any("player", player))
+	return nil
+}
+
+func init() {
+	h := slog.NewJSONHandler(writer.New(os.Stdout), nil)
+	slog.SetDefault(slog.New(h))
 }
 
 func main() {
