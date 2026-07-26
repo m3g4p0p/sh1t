@@ -5,13 +5,68 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"time"
 
+	"m3g4p0p/sh1t/internal/pipeline"
 	"m3g4p0p/sh1t/internal/site"
 	"m3g4p0p/sh1t/internal/writer"
 )
 
 var config struct {
 	urls []string
+}
+
+type deployment struct {
+	startTime time.Time
+	players   []*site.Player
+}
+
+func (d *deployment) start(context.Context) (pipeline.Step, error) {
+	d.startTime = time.Now()
+	d.players = make([]*site.Player, len(config.urls))
+
+	return pipeline.Sequence(d.collectPlayers, d.generatePage), nil
+}
+
+func (d *deployment) collectPlayers(context.Context) (pipeline.Step, error) {
+	var steps []pipeline.Step
+	for i, url := range config.urls {
+		steps = append(steps, d.extractPlayer(i, url))
+	}
+	return pipeline.ParallelN(3, steps...), nil
+}
+
+func (d *deployment) extractPlayer(i int, url string) pipeline.Step {
+	return func(ctx context.Context) (pipeline.Step, error) {
+		slog.Info("extracting", slog.String("url", url))
+
+		player, err := site.ExtractPlayer(ctx, url)
+		if err != nil {
+			return nil, err
+		}
+
+		slog.Info("extracted", slog.Any("player", player))
+		player.EmbedURL.SetOption("tracklist", "true")
+		player.EmbedURL.SetOption("bgcolor", "333333")
+		d.players[i] = player
+
+		return nil, nil
+	}
+}
+
+func (d *deployment) generatePage(context.Context) (pipeline.Step, error) {
+	return d.finish, site.Generate(d.players)
+}
+
+func (d *deployment) finish(context.Context) (pipeline.Step, error) {
+	elapsed := time.Since(d.startTime)
+
+	slog.Info("Build finished.", slog.GroupAttrs(
+		"metrics",
+		slog.Float64("duration", elapsed.Seconds()),
+	))
+
+	return nil, nil
 }
 
 func runBuild() error {
@@ -22,23 +77,9 @@ func runBuild() error {
 	flag.Parse()
 
 	ctx := context.Background()
+	dep := &deployment{}
 
-	var players []*site.Player
-	for _, url := range config.urls {
-		slog.Info("extracting", slog.String("url", url))
-
-		player, err := site.ExtractPlayer(ctx, url)
-		if err != nil {
-			return err
-		}
-
-		slog.Info("extracted", slog.Any("player", player))
-		player.EmbedURL.SetOption("tracklist", "true")
-		player.EmbedURL.SetOption("bgcolor", "333333")
-		players = append(players, player)
-	}
-
-	return site.Generate(players)
+	return pipeline.Run(ctx, dep.start)
 }
 
 func init() {
