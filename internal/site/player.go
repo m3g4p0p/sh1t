@@ -3,10 +3,7 @@ package site
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
-
-	"m3g4p0p/sh1t/internal/urlpath"
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -15,7 +12,7 @@ import (
 type Player struct {
 	Title    string
 	AlbumURL string
-	EmbedURL string
+	EmbedURL *EmbedURL
 }
 
 func ExtractPlayer(url string) (*Player, error) {
@@ -29,12 +26,12 @@ func ExtractPlayer(url string) (*Player, error) {
 		return nil, fmt.Errorf("no title found parsing %s", url)
 	}
 
-	embedURL := findEmbedURL(doc)
-	if embedURL == "" {
+	rawEmbedURL := findEmbedURL(doc)
+	if rawEmbedURL == "" {
 		return nil, fmt.Errorf("no player found parsing %s", url)
 	}
 
-	processed, err := processEmbedURL(embedURL)
+	embedURL, err := ParseURL(rawEmbedURL)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +39,7 @@ func ExtractPlayer(url string) (*Player, error) {
 	return &Player{
 		Title:    title,
 		AlbumURL: url,
-		EmbedURL: processed,
+		EmbedURL: embedURL,
 	}, nil
 }
 
@@ -95,18 +92,4 @@ func findEmbedURL(doc *html.Node) string {
 	}
 
 	return ""
-}
-
-func processEmbedURL(rawURL string) (string, error) {
-	embedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return "", err
-	}
-
-	path := urlpath.Parse(embedURL.Path)
-	path.Set("tracklist", "true")
-	path.Set("bgcol", "333333")
-	embedURL.Path = path.String()
-
-	return embedURL.String(), nil
 }

@@ -23,11 +23,15 @@ func runBuild() error {
 	var players []*site.Player
 	for _, url := range config.urls {
 		slog.Info("extracting", slog.String("url", url))
+
 		player, err := site.ExtractPlayer(url)
 		if err != nil {
 			return err
 		}
+
 		slog.Info("extracted", slog.Any("player", player))
+		player.EmbedURL.SetOption("tracklist", "true")
+		player.EmbedURL.SetOption("bgcolor", "333333")
 		players = append(players, player)
 	}
 
