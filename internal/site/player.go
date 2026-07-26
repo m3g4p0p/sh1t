@@ -1,6 +1,7 @@
 package site
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -15,8 +16,8 @@ type Player struct {
 	EmbedURL *EmbedURL
 }
 
-func ExtractPlayer(url string) (*Player, error) {
-	doc, err := parsePage(url)
+func ExtractPlayer(ctx context.Context, url string) (*Player, error) {
+	doc, err := parsePage(ctx, url)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +44,13 @@ func ExtractPlayer(url string) (*Player, error) {
 	}, nil
 }
 
-func parsePage(url string) (*html.Node, error) {
-	res, err := http.Get(url)
+func parsePage(ctx context.Context, url string) (*html.Node, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
