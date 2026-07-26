@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"os"
@@ -20,11 +21,13 @@ func runBuild() error {
 	})
 	flag.Parse()
 
+	ctx := context.Background()
+
 	var players []*site.Player
 	for _, url := range config.urls {
 		slog.Info("extracting", slog.String("url", url))
 
-		player, err := site.ExtractPlayer(url)
+		player, err := site.ExtractPlayer(ctx, url)
 		if err != nil {
 			return err
 		}
