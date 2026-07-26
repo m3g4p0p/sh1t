@@ -6,12 +6,15 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"m3g4p0p/sh1t/internal/caching"
 	"m3g4p0p/sh1t/internal/pipeline"
 	"m3g4p0p/sh1t/internal/site"
 	"m3g4p0p/sh1t/internal/writer"
+
+	"github.com/joho/godotenv"
 )
 
 var config struct {
@@ -82,6 +85,10 @@ func (d *deployment) finish(context.Context) (pipeline.Step, error) {
 }
 
 func runBuild() error {
+	for line := range strings.Lines(os.Getenv("URLS")) {
+		config.urls = append(config.urls, strings.TrimSpace(line))
+	}
+
 	flag.StringVar(&config.cacheDir, "cache-dir", "", "")
 	flag.Func("url", "", func(s string) error {
 		config.urls = append(config.urls, s)
@@ -98,6 +105,7 @@ func runBuild() error {
 func init() {
 	h := slog.NewJSONHandler(writer.New(os.Stdout), nil)
 	slog.SetDefault(slog.New(h))
+	godotenv.Load()
 }
 
 func main() {
