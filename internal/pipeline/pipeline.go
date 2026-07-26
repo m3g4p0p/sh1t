@@ -5,12 +5,10 @@ import (
 	"sync"
 )
 
-type Step[T any] func(ctx context.Context) (Step[T], error)
+type Step func(ctx context.Context) (Step, error)
 
-type AnyStep = Step[any]
-
-func Parallel[T any](steps ...Step[T]) Step[T] {
-	return func(ctx context.Context) (Step[T], error) {
+func Parallel(steps ...Step) Step {
+	return func(ctx context.Context) (Step, error) {
 		ctx, cancel := context.WithCancelCause(ctx)
 		defer cancel(nil)
 
@@ -29,8 +27,8 @@ func Parallel[T any](steps ...Step[T]) Step[T] {
 	}
 }
 
-func Sequence[T any](steps ...Step[T]) Step[T] {
-	return func(ctx context.Context) (Step[T], error) {
+func Sequence(steps ...Step) Step {
+	return func(ctx context.Context) (Step, error) {
 		for _, step := range steps {
 			if err := Run(ctx, step); err != nil {
 				return nil, err
@@ -40,7 +38,7 @@ func Sequence[T any](steps ...Step[T]) Step[T] {
 	}
 }
 
-func Run[T any](ctx context.Context, step Step[T]) error {
+func Run(ctx context.Context, step Step) error {
 	for step != nil {
 		var err error
 		step, err = step(ctx)
