@@ -84,7 +84,10 @@ func stepWorker(ctx context.Context, ch <-chan Step) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case step := <-ch:
+		case step, ok := <-ch:
+			if !ok {
+				return nil
+			}
 			if err := Run(ctx, step); err != nil {
 				return err
 			}
