@@ -16,8 +16,8 @@ type Player struct {
 	EmbedURL *EmbedURL
 }
 
-func ExtractPlayer(ctx context.Context, url string) (*Player, error) {
-	doc, err := parsePage(ctx, url)
+func ExtractPlayer(ctx context.Context, client *http.Client, url string) (*Player, error) {
+	doc, err := parsePage(ctx, client, url)
 	if err != nil {
 		return nil, err
 	}
@@ -44,13 +44,13 @@ func ExtractPlayer(ctx context.Context, url string) (*Player, error) {
 	}, nil
 }
 
-func parsePage(ctx context.Context, url string) (*html.Node, error) {
+func parsePage(ctx context.Context, client *http.Client, url string) (*html.Node, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
