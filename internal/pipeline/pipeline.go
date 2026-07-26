@@ -1,11 +1,13 @@
 package pipeline
 
-type Step[T any] func(state T) (Step[T], error)
+import "context"
+
+type Step[T any] func(ctx context.Context) (Step[T], error)
 
 func Sequence[T any](steps ...Step[T]) Step[T] {
-	return func(state T) (Step[T], error) {
+	return func(ctx context.Context) (Step[T], error) {
 		for _, step := range steps {
-			if err := Run(state, step); err != nil {
+			if err := Run(ctx, step); err != nil {
 				return nil, err
 			}
 		}
@@ -13,10 +15,10 @@ func Sequence[T any](steps ...Step[T]) Step[T] {
 	}
 }
 
-func Run[T any](state T, step Step[T]) error {
+func Run[T any](ctx context.Context, step Step[T]) error {
 	for step != nil {
 		var err error
-		step, err = step(state)
+		step, err = step(ctx)
 		if err != nil {
 			return err
 		}
