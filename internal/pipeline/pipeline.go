@@ -69,7 +69,11 @@ func Sequence(steps ...Step) Step {
 
 func Run(ctx context.Context, step Step) error {
 	for step != nil {
-		var err error
+		err := ctx.Err()
+		if err != nil {
+			return err
+		}
+
 		step, err = step(ctx)
 		if err != nil {
 			return err
