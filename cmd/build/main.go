@@ -62,7 +62,7 @@ func (d *deployment) extractPlayer(i int, url string) pipeline.Step {
 
 		slog.Info("extracted", slog.Any("player", player))
 		player.EmbedURL.SetOption("tracklist", "true")
-		player.EmbedURL.SetOption("bgcolor", "333333")
+		player.EmbedURL.SetOption("bgcol", "333333")
 		d.players[i] = player
 
 		return nil, nil
